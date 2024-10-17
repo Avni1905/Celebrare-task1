@@ -1,3 +1,4 @@
+
 body {
     font-family: Arial, sans-serif;
     display: flex;
@@ -393,3 +394,23 @@ button.active {
     font-size: 0.9rem;
     color: #000;
 }
+.text-element {
+    position: absolute;
+    cursor: move;
+    min-width: 50px;
+    min-height: 20px;
+    padding: 5px;
+    border: 1px dashed #000;
+    background-color: rgba(255, 255, 255, 0.7);
+    user-select: none;
+}
+
+.text-element:hover {
+    border-color: #0000ff;
+}
+
+.text-element.selected {
+    border-style: solid;
+    border-color: #ff0000;
+}
+
