@@ -62,13 +62,33 @@ document.addEventListener('DOMContentLoaded', () => {
         return { type, element, oldState, newState, slide: currentSlide };
     }
 
-    function createImageReorderAction(oldOrder, newOrder) {
+    function createImageReorderAction(oldOrder, newOrder, oldTextElements, newTextElements) {
         return {
             type: 'reorderImages',
             oldState: [...oldOrder],
             newState: [...newOrder],
+            oldTextElements: oldTextElements.map(arr => [...arr]),  
+            newTextElements: newTextElements.map(arr => [...arr]),  
             slide: currentSlide
         };
+    }
+    function reorderTextElements(oldOrder, newOrder) {
+        const newTextElements = Array(textElementsBySlide.length).fill().map(() => []);
+        const reorderMap = new Map();
+        
+        oldOrder.forEach((src, oldIndex) => {
+            const newIndex = newOrder.findIndex(newSrc => newSrc === src);
+            reorderMap.set(oldIndex, newIndex);
+        });
+        
+        textElementsBySlide.forEach((elements, oldIndex) => {
+            const newIndex = reorderMap.get(oldIndex);
+            if (newIndex !== undefined) {
+                newTextElements[newIndex] = elements;
+            }
+        });
+        
+        return newTextElements;
     }
 
     function addTextElement() {
@@ -315,16 +335,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const oldOrder = [...images];
         const newOrder = Array.from(document.querySelectorAll('.reorder-image-wrapper img')).map(img => img.src);
         
-        undoStack.push(createImageReorderAction(oldOrder, newOrder));
+        const oldTextElements = textElementsBySlide.map(arr => [...arr]);  
+        const newTextElements = reorderTextElements(oldOrder, newOrder);  
+        
+        undoStack.push(createImageReorderAction(oldOrder, newOrder, oldTextElements, newTextElements));
         redoStack = [];
         
         images = [...newOrder];
+        textElementsBySlide = newTextElements;  
         cards.forEach((card, index) => {
             card.querySelector('img').src = images[index];
         });
         
         if (currentSlide < images.length) {
             backgroundImage.src = images[currentSlide];
+            updateVisibleTextElements();  
         }
         
         reorderModal.style.display = 'none';
@@ -387,10 +412,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (action.type === 'reorderImages') {
             images = [...action.oldState];
+            textElementsBySlide = action.oldTextElements.map(arr => [...arr]);  
             cards.forEach((card, index) => {
                 card.querySelector('img').src = images[index];
             });
             backgroundImage.src = images[currentSlide];
+            updateVisibleTextElements();  
             redoStack.push(action);
             return;
         }
@@ -431,10 +458,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (action.type === 'reorderImages') {
             images = [...action.newState];
+            textElementsBySlide = action.newTextElements.map(arr => [...arr]);  
             cards.forEach((card, index) => {
                 card.querySelector('img').src = images[index];
             });
             backgroundImage.src = images[currentSlide];
+            updateVisibleTextElements(); 
             undoStack.push(action);
             return;
         }
